@@ -3,10 +3,12 @@ from termcolor import colored, cprint
 #print(indices)
 
 a = nse_optionchain_scrapper('NIFTY')
-date = '20-May-2021'
+date = '03-Jun-2021'
 b = [ i for i in a['records']['data'] if i['expiryDate'] == date ]
 total_ce = 0
 total_pe = 0
+pcr_ce = 0
+pcr_pe = 0
 
 def get_atm_strike():
     payload = a
@@ -26,22 +28,28 @@ print("{0:^12} {1:^12} {2:^12} {3:^9} {4:^13} {5:^9} {6:^12} {7:^12}".format('Ex
 print("_" * 100)
 
 for i in b:
-    if abs(i['strikePrice'] - atm_strike) > 600:
-        continue
-    total_ce += i['CE']['changeinOpenInterest']*75
-    total_pe += i['PE']['changeinOpenInterest']*75
-    if i['strikePrice'] == atm_strike:
-        print_white_on_yellow("{0:^12} {1:^12} {2:^12} {3:^9} {4:^13} {5:^9} {6:^12} {7:^12}".format(i['expiryDate'], i['CE']['openInterest']*75, i['CE']['changeinOpenInterest']*75, i['CE']['lastPrice'], i['strikePrice'], i['PE']['lastPrice'], i['PE']['openInterest']*75, i['PE']['changeinOpenInterest']*75))
-        continue
-    print("{0:^12} {1:^12} {2:^12} {3:^9} {4:^13} {5:^9} {6:^12} {7:^12}".format(i['expiryDate'], i['CE']['openInterest']*75, i['CE']['changeinOpenInterest']*75,i['CE']['lastPrice'], i['strikePrice'], i['PE']['lastPrice'], i['PE']['openInterest']*75, i['PE']['changeinOpenInterest']*75))
+	if abs(i['strikePrice'] - atm_strike) > 700:
+		continue
+	total_ce += i['CE']['changeinOpenInterest']*75
+	total_pe += i['PE']['changeinOpenInterest']*75
+	pcr_ce += i['CE']['openInterest']
+	pcr_pe += i['PE']['openInterest']
+
+	if i['strikePrice'] == atm_strike:
+		print_white_on_yellow("{0:^12} {1:^12} {2:^12} {3:^9} {4:^13} {5:^9} {6:^12} {7:^12}".format(i['expiryDate'], i['CE']['openInterest']*75, i['CE']['changeinOpenInterest']*75, i['CE']['lastPrice'], i['strikePrice'], i['PE']['lastPrice'], i['PE']['openInterest']*75, i['PE']['changeinOpenInterest']*75))
+		continue
+	print("{0:^12} {1:^12} {2:^12} {3:^9} {4:^13} {5:^9} {6:^12} {7:^12}".format(i['expiryDate'], i['CE']['openInterest']*75, i['CE']['changeinOpenInterest']*75,i['CE']['lastPrice'], i['strikePrice'], i['PE']['lastPrice'], i['PE']['openInterest']*75, i['PE']['changeinOpenInterest']*75))
 
 print("=" * 100)
 print("Total CE OI = " + str(total_ce) +" | Total PE OI = " + str(total_pe) + " | Diff = " + str(total_ce - total_pe))
 
-print("Trend: ")
+print("Trend (based on OI change): ")
 if total_ce > total_pe:
-    print_white_on_red("Bearish")
+	print_white_on_red("Bearish")
 elif total_ce < total_pe:
-    print_white_on_green("Bullish")
+	print_white_on_green("Bullish")
 else:
-    print("Trend: Sideways")
+	print("Trend: Sideways")
+
+pcr_ratio = round(pcr_pe/pcr_ce,2)
+print( "Total CE OI: {}  |  Total PE OI: {}  |  PCR Ratio: {}".format(pcr_ce*75, pcr_pe*75, pcr_ratio) )
